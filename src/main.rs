@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use std::time;
+use std::thread::sleep;
+
+use rand::{thread_rng, Rng};
 
 #[derive(Debug, Clone)]
 struct Aeroporto {
@@ -50,18 +53,24 @@ impl Aviao {
         }
     }
 
-    fn levantar_voo(&mut self, destino: String, l_aero: &HashMap<String, Aeroporto>) {
-        self.estado = match self.estado {
-            AviaoEstado::Estacionado {..} => AviaoEstado::Voando{
-                tempo_chegada: time::Duration::new(0, 0),
-                combustivel_sobra: time::Duration::new(0, 0),
-                destino: destino
+    fn levantar_voo(&mut self, destino: String, l_aero: &mut HashMap<String, Aeroporto>) -> Result<(), ()> {
+        self.estado = match &self.estado {
+            AviaoEstado::Estacionado {tempo_saida, local} => {
+                let mut a = l_aero.get_mut(local).unwrap();
+                a.pistas += 1;
+                AviaoEstado::Voando{
+                    tempo_chegada: time::Duration::new(0, 0),
+                    combustivel_sobra: time::Duration::new(0, 0),
+                    destino: destino
+                }
             },
-            _ => panic!("Impossível levantar voo")
-        }
+            _ => return Err(())
+        };
+
+        return Ok(())
     }
 
-    fn pousar(&mut self, a: String, l_aero: &mut HashMap<String, Aeroporto>) {
+    fn pousar(&mut self, a: String, l_aero: &mut HashMap<String, Aeroporto>) -> Result<(), ()> {
         let mut a = l_aero.get_mut(&a).unwrap();
 
         if a.pistas < 1 {
@@ -70,7 +79,7 @@ impl Aviao {
                     combustivel_sobra: time::Duration::new(0, 0),
                     destino: a.nome.clone()
                 },
-                _ => panic!("Impossível pousar")
+                _ => return Err(())
             };
         } else {
             self.estado = match self.estado {
@@ -82,9 +91,17 @@ impl Aviao {
                     tempo_saida: time::Duration::new(0, 0),
                     local: a.nome.clone()
                 },
-                _ => panic!("Impossível pousar")
+                _ => return Err(())
             };
             a.pistas -= 1;
+        }
+        Ok(())
+    }
+
+    fn get_destino(&self) -> Result<String, ()> {
+        match &self.estado {
+            AviaoEstado::Voando {destino, tempo_chegada: _, combustivel_sobra: _} => {return Ok(destino.clone())},
+            _ => {return Err(())}
         }
     }
 }
@@ -92,26 +109,75 @@ impl Aviao {
 fn main() {
     let mut lista_aeroportos = HashMap::<String, Aeroporto>::new();
 
-    let aero = Aeroporto::new("Guarulhos");
-    lista_aeroportos.insert(aero.nome.clone(), aero.clone());
+    let aero1 = Aeroporto::new("Guarulhos");
+    lista_aeroportos.insert(aero1.nome.clone(), aero1.clone());
     let aero = Aeroporto::new("Congonhas");
     lista_aeroportos.insert(aero.nome.clone(), aero.clone());
 
-    let mut maq1 = Aviao::new(aero.nome.clone());
-    let mut maq2 = Aviao::new(aero.nome.clone());
-    let mut maq3 = Aviao::new(aero.nome.clone());
+    let maq1 = Aviao::new(aero.nome.clone());
+    let maq2 = Aviao::new(aero.nome.clone());
+    let maq3 = Aviao::new(aero.nome.clone());
 
-    maq1.levantar_voo(aero.nome.clone(), &lista_aeroportos);
-    maq1.pousar(String::from("Congonhas"), &mut lista_aeroportos);
+    let mut lista_aviao = Vec::<Aviao>::new();
+    lista_aviao.push(maq1);
+    lista_aviao.push(maq2);
+    lista_aviao.push(maq3);
 
-    maq2.levantar_voo(aero.nome.clone(), &lista_aeroportos);
-    maq2.pousar(String::from("Congonhas"), &mut lista_aeroportos);
+    lista_aviao[0].levantar_voo(aero.nome.clone(), &mut lista_aeroportos).unwrap();
+    lista_aviao[1].levantar_voo(aero.nome.clone(), &mut lista_aeroportos).unwrap();
+    lista_aviao[2].levantar_voo(aero.nome.clone(), &mut lista_aeroportos).unwrap();
 
-    maq3.levantar_voo(aero.nome.clone(), &lista_aeroportos);
-    maq3.pousar(String::from("Congonhas"), &mut lista_aeroportos);
+    let turno = time::Duration::new(1, 0);
+    loop {
+        let mut rng = thread_rng();
 
-    dbg!(&maq1);
-    dbg!(&maq2);
-    dbg!(&maq3);
+        sleep(turno);
+
+        for a in lista_aviao.iter_mut() {
+            // gera ação
+            let u: i8 = rng.gen_range(0, 2);
+
+            // gera destino
+            let i: i8 = rng.gen_range(0, lista_aeroportos.len() as i8);
+            let mut dest = String::new();
+
+            for (p, l) in lista_aeroportos.iter().enumerate() {
+                if p == i as usize {
+                    dest = l.0.to_string();
+
+                }
+            }
+
+            match u {
+                // levantar voo
+                0 => {
+                    match a.levantar_voo(dest, &mut lista_aeroportos) {
+                        Ok(()) => {},
+                        Err(()) => {}
+                    }
+                },
+                // pousar
+                1 => {
+                    match a.get_destino() {
+                        Ok(q) => {
+                            match a.pousar(q, &mut lista_aeroportos) {
+                                Ok(()) => {},
+                                Err(()) => {}
+                            }
+                        }
+                        Err(_) => {}
+                    };
+                },
+                _ => {}
+            }
+
+        }
+
+        dbg!(&lista_aviao);
+
+    }
+
+    /*
+    */
 
 }
