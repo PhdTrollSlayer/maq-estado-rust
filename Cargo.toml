@@ -1,0 +1,7 @@
+[package]
+name = "mq-aviao"
+version = "0.1.0"
+authors = ["PhdTrollSlayer <rodrigomauricio@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
