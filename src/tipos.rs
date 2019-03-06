@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::time;
-use std::thread::sleep;
 
 use rand::{thread_rng, Rng};
 
@@ -8,7 +6,6 @@ use rand::{thread_rng, Rng};
 pub struct Aeroporto {
     pub nome: String,
     pub pistas: i8,
-    pub tempo_para_liberar: time::Duration,
 }
 
 impl Aeroporto {
@@ -16,7 +13,6 @@ impl Aeroporto {
         Aeroporto {
             nome: String::from(n),
             pistas: 2,
-            tempo_para_liberar: time::Duration::new(0, 0),
         }
     }
 }
@@ -24,16 +20,12 @@ impl Aeroporto {
 #[derive(Debug)]
 pub enum AviaoEstado {
     Voando {
-        tempo_chegada: time::Duration,
-        combustivel_sobra: time::Duration,
         destino: String
     },
     Estacionado {
-        tempo_saida: time::Duration,
         local: String
     },
     EsperandoAr {
-        combustivel_sobra: time::Duration,
         destino: String
     },
 }
@@ -47,7 +39,6 @@ impl Aviao {
     pub fn new(a: String) -> Aviao {
         Aviao {
             estado: AviaoEstado::Estacionado{
-                tempo_saida: time::Duration::new(0, 0),
                 local: a
             },
         }
@@ -56,12 +47,10 @@ impl Aviao {
     pub fn levantar_voo(&mut self, destino: String) -> Result<String, ()> {
         let mut s;
         self.estado = match &self.estado {
-            AviaoEstado::Estacionado {tempo_saida: _, local} => {
+            AviaoEstado::Estacionado {local} => {
 
                 s = local.clone();
                 AviaoEstado::Voando{
-                    tempo_chegada: time::Duration::new(8, 0),
-                    combustivel_sobra: time::Duration::new(10, 0),
                     destino: destino
                 }
             },
@@ -77,8 +66,7 @@ impl Aviao {
 
         if a.pistas == 0 {
             self.estado = match self.estado {
-                AviaoEstado::Voando {combustivel_sobra, destino: _, tempo_chegada: _} => AviaoEstado::EsperandoAr{
-                    combustivel_sobra: combustivel_sobra,
+                AviaoEstado::Voando {destino: _} => AviaoEstado::EsperandoAr{
                     destino: a.nome.clone()
                 },
                 _ => return Err(())
@@ -86,11 +74,9 @@ impl Aviao {
         } else {
             self.estado = match self.estado {
                 AviaoEstado::Voando {..} => AviaoEstado::Estacionado{
-                    tempo_saida: time::Duration::new(2, 0),
                     local: a.nome.clone()
                 },
                 AviaoEstado::EsperandoAr {..} => AviaoEstado::Estacionado{
-                    tempo_saida: time::Duration::new(2, 0),
                     local: a.nome.clone()
                 },
                 _ => return Err(())
@@ -102,16 +88,19 @@ impl Aviao {
 
     pub fn get_destino(&self) -> Result<String, ()> {
         match &self.estado {
-            AviaoEstado::Voando {destino, tempo_chegada: _, combustivel_sobra: _} => {
+            AviaoEstado::Voando{destino} => {
                 return Ok(destino.clone())
             },
+            AviaoEstado::EsperandoAr{destino} => {
+                return Ok(destino.clone())
+            }
             _ => {return Err(())}
         }
     }
 
     pub fn get_local(&self) -> String {
         match &self.estado {
-            AviaoEstado::Estacionado {local, tempo_saida: _} => {
+            AviaoEstado::Estacionado {local} => {
                 return local.clone()
             },
             _ => {String::new()}
