@@ -34,7 +34,7 @@ fn main() {
     // Inicializa eles pela primeira vez
     lista_aviao[0].levantar_voo(String::from("Guarulhos")).unwrap();
     lista_aviao[1].levantar_voo(String::from("Guarulhos")).unwrap();
-    lista_aviao[2].levantar_voo(String::from("Congonhas")).unwrap();
+    lista_aviao[2].levantar_voo(String::from("Guarulhos")).unwrap();
     lista_aviao[3].levantar_voo(String::from("Congonhas")).unwrap();
     lista_aviao[4].levantar_voo(String::from("Hercílio Luz")).unwrap();
 
@@ -56,9 +56,7 @@ fn main() {
                 Ok(q) => {
                     match a.pousar(q, &mut lista_aeroportos) {
                         Ok(()) => {},
-                        Err(()) => {
-
-                        }
+                        Err(()) => {}
                     }
                 }
                 Err(_) => {
@@ -68,8 +66,7 @@ fn main() {
                             a.pistas += 1;
                             assert!(a.pistas < 3);
                         },
-                        Err(()) => {
-                        }
+                        Err(()) => {}
                     }
                 }
             }
