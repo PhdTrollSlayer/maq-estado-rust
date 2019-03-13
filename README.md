@@ -1,3 +1,7 @@
+# Maquina de Estados - Simulador de aeroportos e aviões
+
+![](/images/2019/03/diagrama.jpg)
+
 * Q = {V, A, E}
 * Σ = {P, L}
 * δc :
